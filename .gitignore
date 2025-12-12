@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Data files
+data-collection/collected_characters/*.png
+data-collection/collected_characters/api_response_*.json
+data-collection/collected_characters/upload_report.json
+*.flow
+
+# Credentials and tokens
+.env
+.env.local
+*.key
+*.pem
+*_token.txt
+CLOUDBRUSH_TOKEN
+
+# Wrangler
+.wrangler/
+.dev.vars
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+.cache/
+
+# Keep important data files but ignore large datasets
+!data-collection/collected_characters/char_url_mapping.json
+!data-collection/collected_characters/collection_report.json

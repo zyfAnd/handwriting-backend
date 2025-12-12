@@ -1,0 +1,35 @@
+name = "handwriting-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# R2 Bucket for storing character images
+[[r2_buckets]]
+binding = "CHAR_IMAGES"
+bucket_name = "handwriting-characters"
+
+# KV Namespace for character mapping (字符映射)
+[[kv_namespaces]]
+binding = "CHAR_MAPPING"
+id = "YOUR_KV_NAMESPACE_ID"  # Run: wrangler kv:namespace create "CHAR_MAPPING"
+preview_id = "YOUR_PREVIEW_KV_ID"  # Optional: for preview environment
+
+# Environment variables
+[vars]
+R2_PUBLIC_DOMAIN = "handwriting-characters.r2.dev"  # Replace with your R2 public domain
+API_VERSION = "1.0.0"
+
+# Production environment
+[env.production]
+name = "handwriting-api-prod"
+vars = { R2_PUBLIC_DOMAIN = "cdn.yourdomain.com" }  # Use custom domain in production
+
+# Development environment
+[env.development]
+name = "handwriting-api-dev"
+vars = { R2_PUBLIC_DOMAIN = "handwriting-characters-dev.r2.dev" }
+
+# Development server config
+[dev]
+ip = "0.0.0.0"
+port = 8787
+local_protocol = "http"

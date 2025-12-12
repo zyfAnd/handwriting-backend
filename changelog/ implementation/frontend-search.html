@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>汉字图片搜索 - Chinese Character Image Search</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                   "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .search-box {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    #searchInput {
+      flex: 1;
+      padding: 15px 20px;
+      font-size: 1.2em;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    #searchInput:focus {
+      border-color: #667eea;
+    }
+
+    #searchBtn {
+      padding: 15px 40px;
+      font-size: 1.1em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      font-weight: 600;
+    }
+
+    #searchBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    #searchBtn:active {
+      transform: translateY(0);
+    }
+
+    .examples {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .example-tag {
+      padding: 8px 15px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-size: 0.95em;
+    }
+
+    .example-tag:hover {
+      background: #e0e0e0;
+    }
+
+    .stats {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .results {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .results-header {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .results-header h2 {
+      color: #333;
+      font-size: 1.5em;
+    }
+
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .char-card {
+      background: #f9f9f9;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .char-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      border-color: #667eea;
+    }
+
+    .char-display {
+      font-size: 3em;
+      margin-bottom: 15px;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .char-image {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background: white;
+    }
+
+    .char-info {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 10px;
+    }
+
+    .char-unicode {
+      color: #999;
+      font-family: monospace;
+      font-size: 0.85em;
+    }
+
+    .download-btn {
+      margin-top: 10px;
+      padding: 8px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+
+    .download-btn:hover {
+      background: #45a049;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2em;
+      color: #666;
+    }
+
+    .error {
+      background: #fee;
+      border: 2px solid #fcc;
+      border-radius: 10px;
+      padding: 20px;
+      color: #c33;
+      margin-top: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .not-available {
+      opacity: 0.5;
+      position: relative;
+    }
+
+    .not-available::after {
+      content: "暂无图片";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.8em;
+      color: #999;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .search-input-wrapper {
+        flex-direction: column;
+      }
+
+      .char-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+    }
+
+    .footer {
+      text-align: center;
+      color: white;
+      margin-top: 40px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1>🔍 汉字图片搜索</h1>
+      <p>Chinese Character Image Search</p>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="search-box">
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="输入汉字进行搜索，例如：水火山..." 
+          autocomplete="off"
+        />
+        <button id="searchBtn">搜索</button>
+      </div>
+      
+      <div class="examples">
+        <span style="color: #666; margin-right: 10px;">试试这些：</span>
+        <div class="example-tag" onclick="searchExample('水火山')">水火山</div>
+        <div class="example-tag" onclick="searchExample('春夏秋冬')">春夏秋冬</div>
+        <div class="example-tag" onclick="searchExample('东南西北')">东南西北</div>
+        <div class="example-tag" onclick="searchExample('日月星辰')">日月星辰</div>
+        <div class="example-tag" onclick="searchExample('金木水火土')">金木水火土</div>
+      </div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats" id="stats">
+      <span id="totalChars">正在加载...</span>
+    </div>
+
+    <!-- 搜索结果 -->
+    <div class="results" id="resultsContainer" style="display: none;">
+      <div class="results-header">
+        <h2 id="resultsTitle">搜索结果</h2>
+      </div>
+      <div id="resultsContent"></div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <div class="footer">
+    <p>Powered by Cloudflare Workers & R2 Storage</p>
+    <p style="margin-top: 10px; font-size: 0.9em;">
+      Made with ❤️ | 
+      <a href="#" style="color: white;" onclick="showAbout(); return false;">关于</a>
+    </p>
+  </div>
+
+  <script>
+    // ========================================================================
+    // 配置
+    // ========================================================================
+    
+    const API_BASE_URL = 'https://your-worker.workers.dev'; // 替换为你的Worker URL
+    
+    // ========================================================================
+    // 初始化
+    // ========================================================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      
+      // 搜索按钮事件
+      document.getElementById('searchBtn').addEventListener('click', handleSearch);
+      
+      // 回车搜索
+      document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleSearch();
+        }
+      });
+    });
+
+    // ========================================================================
+    // 加载统计信息
+    // ========================================================================
+    
+    async function loadStats() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/stats`);
+        const data = await response.json();
+        
+        document.getElementById('totalChars').textContent = 
+          `📚 数据库包含 ${data.total_characters} 个汉字图片`;
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+        document.getElementById('totalChars').textContent = '数据加载中...';
+      }
+    }
+
+    // ========================================================================
+    // 搜索处理
+    // ========================================================================
+    
+    async function handleSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      
+      if (!query) {
+        alert('请输入要搜索的汉字');
+        return;
+      }
+
+      showLoading();
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          displayResults(data);
+        } else {
+          showError(data.error || '搜索失败');
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        showError('网络错误，请检查API配置或稍后重试');
+      }
+    }
+
+    // ========================================================================
+    // 显示结果
+    // ========================================================================
+    
+    function displayResults(data) {
+      const container = document.getElementById('resultsContainer');
+      const title = document.getElementById('resultsTitle');
+      const content = document.getElementById('resultsContent');
+
+      container.style.display = 'block';
+      title.textContent = `"${data.query}" 的搜索结果 (${data.count}个)`;
+
+      if (data.results.length === 0) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#ccc" stroke-width="3"/>
+              <line x1="30" y1="40" x2="40" y2="40" stroke="#ccc" stroke-width="3"/>
+              <line x1="60" y1="40" x2="70" y2="40" stroke="#ccc" stroke-width="3"/>
+              <path d="M 30 65 Q 50 55 70 65" fill="none" stroke="#ccc" stroke-width="3"/>
+            </svg>
+            <h3>未找到结果</h3>
+            <p>请尝试其他汉字</p>
+          </div>
+        `;
+        return;
+      }
+
+      const html = data.results.map(char => {
+        if (char.available === false) {
+          return `
+            <div class="char-card not-available">
+              <div class="char-display">${char.char}</div>
+              <div class="char-unicode">${char.unicode}</div>
+              <div class="char-info">${char.message}</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="char-card" onclick="viewFullImage('${char.url}')">
+            <div class="char-display">${char.char}</div>
+            <img 
+              src="${char.url}" 
+              alt="${char.char}" 
+              class="char-image"
+              onerror="this.style.display='none'; this.parentElement.classList.add('not-available');"
+            />
+            <div class="char-unicode">${char.unicode}</div>
+            ${char.metadata ? `
+              <div class="char-info">
+                大小: ${formatBytes(char.metadata.size)}
+              </div>
+            ` : ''}
+            <button class="download-btn" onclick="downloadImage('${char.url}', '${char.char}'); event.stopPropagation();">
+              下载图片
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      content.innerHTML = `<div class="char-grid">${html}</div>`;
+      
+      // 滚动到结果
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ========================================================================
+    // 辅助函数
+    // ========================================================================
+    
+    function showLoading() {
+      const container = document.getElementById('resultsContainer');
+      const content = document.getElementById('resultsContent');
+      
+      container.style.display = 'block';
+      content.innerHTML = '<div class="loading">⏳ 搜索中...</div>';
+    }
+
+    function showError(message) {
+      const container = document.getElementById('resultsContainer');
+      const content = document.getElementById('resultsContent');
+      
+      container.style.display = 'block';
+      content.innerHTML = `
+        <div class="error">
+          <strong>❌ 错误</strong><br>
+          ${message}
+        </div>
+      `;
+    }
+
+    function searchExample(text) {
+      document.getElementById('searchInput').value = text;
+      handleSearch();
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return 'N/A';
+      return bytes < 1024 
+        ? `${bytes} B` 
+        : `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    function viewFullImage(url) {
+      window.open(url, '_blank');
+    }
+
+    function downloadImage(url, char) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${char}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function showAbout() {
+      alert(
+        '汉字图片搜索系统\n\n' +
+        '功能：\n' +
+        '- 搜索3000+常用汉字\n' +
+        '- 高清PNG图片\n' +
+        '- 快速CDN加速\n\n' +
+        '技术栈：\n' +
+        '- Cloudflare Workers (API)\n' +
+        '- Cloudflare R2 (存储)\n' +
+        '- Cloudflare Pages (前端)\n\n' +
+        'GitHub: https://github.com/your-repo'
+      );
+    }
+  </script>
+</body>
+</html>

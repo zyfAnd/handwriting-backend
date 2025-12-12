@@ -1,0 +1,125 @@
+# Cloudflare Worker 配置文件
+# 详细文档: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "chinese-char-search-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Workers 路由配置
+# 如果你有自定义域名，可以配置路由
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# R2 Bucket 绑定
+[[r2_buckets]]
+binding = "CHAR_BUCKET"
+bucket_name = "chinese-characters"
+preview_bucket_name = "chinese-characters-preview"  # 可选：预览环境
+
+# KV Namespace 绑定（存储字符映射）
+[[kv_namespaces]]
+binding = "CHAR_MAPPING"
+id = "YOUR_KV_NAMESPACE_ID"  # 运行 wrangler kv:namespace create CHAR_MAPPING 后替换
+preview_id = "YOUR_PREVIEW_KV_ID"  # 可选：预览环境
+
+# 环境变量
+[vars]
+R2_PUBLIC_DOMAIN = "chinese-characters.r2.dev"  # 替换为你的R2公开域名
+API_VERSION = "1.0.0"
+
+# 生产环境配置
+[env.production]
+name = "chinese-char-search-api-prod"
+vars = { R2_PUBLIC_DOMAIN = "cdn.yourdomain.com" }  # 生产环境使用自定义域名
+
+# 开发环境配置
+[env.development]
+name = "chinese-char-search-api-dev"
+vars = { R2_PUBLIC_DOMAIN = "chinese-characters-dev.r2.dev" }
+
+# 构建配置（如果使用TypeScript或打包工具）
+# [build]
+# command = "npm run build"
+# [build.upload]
+# format = "service-worker"
+
+# 部署触发器（可选）
+# [triggers]
+# crons = ["0 0 * * *"]  # 每天午夜运行
+
+# 观察者配置（开发时使用）
+[dev]
+ip = "0.0.0.0"
+port = 8787
+local_protocol = "http"
+
+# 限制
+# Workers 免费版限制:
+# - 每天 100,000 次请求
+# - CPU 时间: 10ms/请求
+# - 脚本大小: 1MB
+# 
+# 付费版 ($5/月):
+# - 每月 1000万 次请求
+# - CPU 时间: 50ms/请求
+# - 更多功能
+
+# ============================================================================
+# 部署步骤
+# ============================================================================
+# 
+# 1. 安装 Wrangler
+#    npm install -g wrangler
+# 
+# 2. 登录 Cloudflare
+#    wrangler login
+# 
+# 3. 创建 KV Namespace
+#    wrangler kv:namespace create "CHAR_MAPPING"
+#    # 复制输出的 id 到上面的配置
+# 
+# 4. 创建预览 KV Namespace（可选）
+#    wrangler kv:namespace create "CHAR_MAPPING" --preview
+#    # 复制 preview_id
+# 
+# 5. 上传字符映射数据
+#    wrangler kv:key put --binding=CHAR_MAPPING "char_mapping" \
+#      --path=cdn_url_mapping.json
+# 
+# 6. 部署到生产环境
+#    wrangler deploy
+# 
+# 7. 部署到特定环境
+#    wrangler deploy --env production
+# 
+# 8. 查看日志
+#    wrangler tail
+# 
+# 9. 测试
+#    curl "https://chinese-char-search-api.your-subdomain.workers.dev/api/health"
+# 
+# ============================================================================
+# 常用命令
+# ============================================================================
+# 
+# 本地开发:
+#   wrangler dev
+# 
+# 查看部署列表:
+#   wrangler deployments list
+# 
+# 查看KV内容:
+#   wrangler kv:key list --binding=CHAR_MAPPING
+# 
+# 更新KV:
+#   wrangler kv:key put --binding=CHAR_MAPPING "char_mapping" \
+#     --path=updated_mapping.json
+# 
+# 删除部署:
+#   wrangler delete
+# 
+# 查看Worker信息:
+#   wrangler whoami
+# 
+# ============================================================================
