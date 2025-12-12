@@ -266,10 +266,15 @@ def monitor_directory():
 
 
 if __name__ == '__main__':
+    import socket
+
+    # 尝试找一个可用的端口
+    port = 5001  # 避免与 AirPlay Receiver 冲突
+
     print("=" * 70)
     print("🚀 汉字采集可视化界面启动")
     print("=" * 70)
-    print(f"📊 Web 界面: http://localhost:5000")
+    print(f"📊 Web 界面: http://localhost:{port}")
     print(f"🔧 mitmproxy 界面: http://localhost:8081 (启动采集后)")
     print(f"📱 代理设置: localhost:8080")
     print("=" * 70)
@@ -285,4 +290,4 @@ if __name__ == '__main__':
     monitor_thread.start()
 
     # 启动 Flask 应用
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)

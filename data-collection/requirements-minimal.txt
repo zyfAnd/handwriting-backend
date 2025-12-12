@@ -1,0 +1,14 @@
+# 最小依赖 - 不包含 mitmproxy
+# 使用 Homebrew 安装 mitmproxy: brew install mitmproxy
+
+# Web 服务器
+Flask==3.0.0
+Flask-SocketIO==5.3.6
+
+# WebSocket 支持 - 使用 eventlet (简单模式)
+python-socketio==5.11.0
+python-engineio==4.9.0
+simple-websocket==1.0.0
+
+# 数据处理
+requests==2.31.0

@@ -1,16 +1,17 @@
 # Web 服务器
 Flask==3.0.0
-Flask-SocketIO==5.3.5
+Flask-SocketIO==5.3.6
 
 # WebSocket 支持
-python-socketio==5.10.0
-python-engineio==4.8.0
-
-# 异步支持
-eventlet==0.33.3
+python-socketio==5.11.0
+python-engineio==4.9.0
+gevent==24.2.1
+gevent-websocket==0.10.1
 
 # HTTP 代理和抓包
-mitmproxy==10.1.5
+# Note: mitmproxy may have compatibility issues with Python 3.13
+# If you encounter errors, please use Python 3.11 or 3.12
+mitmproxy==10.2.2
 
 # 数据处理
 requests==2.31.0
