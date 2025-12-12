@@ -1,0 +1,16 @@
+# Web 服务器
+Flask==3.0.0
+Flask-SocketIO==5.3.5
+
+# WebSocket 支持
+python-socketio==5.10.0
+python-engineio==4.8.0
+
+# 异步支持
+eventlet==0.33.3
+
+# HTTP 代理和抓包
+mitmproxy==10.1.5
+
+# 数据处理
+requests==2.31.0

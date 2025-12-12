@@ -10,8 +10,7 @@ bucket_name = "handwriting-characters"
 # KV Namespace for character mapping (字符映射)
 [[kv_namespaces]]
 binding = "CHAR_MAPPING"
-id = "YOUR_KV_NAMESPACE_ID"  # Run: wrangler kv:namespace create "CHAR_MAPPING"
-preview_id = "YOUR_PREVIEW_KV_ID"  # Optional: for preview environment
+id = "738e433e15b2438381d85d852029e791"
 
 # Environment variables
 [vars]

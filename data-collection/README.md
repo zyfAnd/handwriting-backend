@@ -4,13 +4,45 @@
 
 这个模块用于从 CloudBrush App 采集汉字图片数据。
 
-**两种采集方式：**
-1. **API Token 直接采集**（推荐，更快） - 使用已获取的 token 直接调用 API
-2. **抓包采集**（备选） - 通过 mitmproxy 抓包自动保存
+**三种采集方式：**
+1. **可视化 Web 界面**（🌟 推荐） - 实时监控、自动同步到 GitHub/Cloudflare
+2. **API Token 直接采集**（快速） - 使用已获取的 token 直接调用 API
+3. **抓包采集**（备选） - 通过 mitmproxy 抓包自动保存
 
 ---
 
-## 🚀 方式一：API Token 直接采集（推荐）
+## 🌟 方式一：可视化 Web 界面（强烈推荐）
+
+**最新功能！** 提供完整的可视化采集系统，支持实时监控、自动同步。
+
+### 特性
+
+- ✅ **实时可视化界面** - 查看采集进度、字符列表
+- ✅ **自动监控** - WebSocket 实时更新
+- ✅ **一键同步** - 自动提交到 GitHub
+- ✅ **自动部署** - GitHub Actions 自动上传到 Cloudflare
+- ✅ **完整流程** - 采集 → 存储 → GitHub → Cloudflare R2/KV
+
+### 快速开始
+
+```bash
+cd data-collection
+./start_collector.sh
+```
+
+启动后：
+1. 访问 http://localhost:5000 查看 Web 界面
+2. 配置 iPhone 代理（界面会显示 IP 和端口）
+3. 点击 "开始采集" 按钮
+4. 在 iPhone 上打开 CloudBrush App 浏览汉字
+5. 实时查看采集进度
+6. 点击 "提交到 GitHub" 一键同步
+
+**详细说明：** 查看本目录下的完整使用文档
+
+---
+
+## 🚀 方式二：API Token 直接采集（快速）
 
 如果你已经通过 Charles 抓包获取到了 token，可以使用这种方式，**无需手动操作，全自动批量采集**。
 
@@ -33,7 +65,7 @@ python3 api_collector.py
 
 ---
 
-## 🔧 方式二：抓包采集（备选方案）
+## 🔧 方式三：抓包采集（备选方案）
 
 如果无法获取 token，可以使用抓包方式。
 
@@ -84,18 +116,30 @@ cat char_url_mapping.json | head  # 查看映射
 
 ## 📁 文件说明
 
-- `api_collector.py` - **API Token 直接采集脚本（推荐）**
-- `enhanced_collector.py` - 增强版抓包脚本（备选）
+### 可视化 Web 界面
+- `start_collector.sh` - **一键启动脚本**
+- `web_collector.py` - Web 界面后端（Flask + SocketIO）
+- `templates/collector.html` - Web 界面前端
+- `requirements.txt` - Python 依赖
+
+### 采集脚本
+- `api_collector.py` - API Token 直接采集脚本
+- `enhanced_collector.py` - 增强版抓包脚本
 - `common_3500_chars.txt` - 常用汉字列表（用于进度统计）
-- `API_TOKEN_GUIDE.md` - API Token 采集详细指南
+
+### 数据存储
 - `collected_characters/` - 采集的图片保存目录（自动创建）
   - `6c34_水.png` - 图片文件（格式：unicode_汉字.png）
   - `char_url_mapping.json` - 字符映射文件
 
+### 文档
+- `API_TOKEN_GUIDE.md` - API Token 采集详细指南
+
 ## 📊 采集进度
 
-- API Token 方式：自动显示进度条
-- 抓包方式：每10个字符自动保存一次，并在终端显示进度
+- **Web 界面方式**：实时可视化进度条、字符列表、实时日志
+- **API Token 方式**：自动显示进度条
+- **抓包方式**：每10个字符自动保存一次，并在终端显示进度
 
 ## ⚠️ 注意事项
 
@@ -110,7 +154,20 @@ cat char_url_mapping.json | head  # 查看映射
 3. 采集过程需要手动操作，3000字预计需要1-2小时
 4. 采集的图片会自动保存到 `collected_characters/` 目录
 
+## 🚀 自动同步到 Cloudflare
+
+使用 **Web 界面** 或手动提交到 GitHub 后，系统会自动：
+
+1. **触发 GitHub Actions** - 检测到 `collected_characters/` 变化
+2. **上传图片到 R2** - 所有 PNG 文件上传到 `handwriting-characters` bucket
+3. **上传映射到 KV** - 字符映射上传到 KV Namespace
+4. **实时生效** - Cloudflare Worker API 立即可用
+
+查看同步状态: https://github.com/zyfAnd/handwriting-backend/actions
+
 ## 📖 详细文档
 
+- **可视化 Web 界面：** 查看本 README 上方的 "方式一" 说明
 - **API Token 采集：** [`API_TOKEN_GUIDE.md`](API_TOKEN_GUIDE.md)
-- **完整实施指南：** `../changelog/ implementation/COMPLETE_IMPLEMENTATION_GUIDE.md`
+- **完整实施指南：** `../changelog/implementation/COMPLETE_IMPLEMENTATION_GUIDE.md`
+- **GitHub Actions：** [`../.github/workflows/sync-data.yml`](../.github/workflows/sync-data.yml)

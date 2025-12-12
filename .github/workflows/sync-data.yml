@@ -1,0 +1,159 @@
+name: Sync Data to Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data-collection/collected_characters/**'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force full sync'
+        required: false
+        default: 'false'
+
+jobs:
+  sync-to-cloudflare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests
+
+      - name: Check collected files
+        id: check_files
+        run: |
+          cd data-collection/collected_characters
+          PNG_COUNT=$(find . -name "*.png" -type f | wc -l)
+          echo "png_count=$PNG_COUNT" >> $GITHUB_OUTPUT
+          echo "📊 发现 $PNG_COUNT 个 PNG 文件"
+
+          if [ -f "char_url_mapping.json" ]; then
+            CHAR_COUNT=$(cat char_url_mapping.json | python3 -c "import sys, json; print(len(json.load(sys.stdin)))")
+            echo "char_count=$CHAR_COUNT" >> $GITHUB_OUTPUT
+            echo "📝 发现 $CHAR_COUNT 个字符映射"
+          else
+            echo "char_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload images to R2
+        if: steps.check_files.outputs.png_count > 0
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cd data-collection/collected_characters
+
+          echo "📤 开始上传图片到 R2..."
+
+          for file in *.png; do
+            if [ -f "$file" ]; then
+              echo "  上传: $file"
+              wrangler r2 object put \
+                handwriting-characters/chars/$file \
+                --file=$file \
+                --content-type=image/png
+            fi
+          done
+
+          echo "✅ 图片上传完成"
+
+      - name: Upload mapping to KV
+        if: steps.check_files.outputs.char_count > 0
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cd data-collection/collected_characters
+
+          if [ ! -f "char_url_mapping.json" ]; then
+            echo "⚠️  未找到 char_url_mapping.json"
+            exit 0
+          fi
+
+          echo "📤 开始上传字符映射到 KV..."
+
+          # 读取映射文件并逐个上传到 KV
+          cat char_url_mapping.json | python3 -c "
+import json
+import sys
+import subprocess
+
+mapping = json.load(sys.stdin)
+count = 0
+
+for char, data in mapping.items():
+    # 构建 KV 值
+    kv_value = {
+        'char': char,
+        'filename': data.get('filename', ''),
+        'unicode': data.get('unicode', ''),
+        'url': f'https://handwriting-characters.r2.dev/chars/{data.get(\"filename\", \"\")}',
+        'size': data.get('size', 0),
+        'timestamp': data.get('timestamp', '')
+    }
+
+    # 上传到 KV
+    key = char
+    value = json.dumps(kv_value, ensure_ascii=False)
+
+    cmd = [
+        'wrangler', 'kv', 'key', 'put',
+        key,
+        value,
+        '--namespace-id', '738e433e15b2438381d85d852029e791'
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        count += 1
+        print(f'  ✅ {char} -> {data.get(\"filename\", \"\")}')
+    except subprocess.CalledProcessError as e:
+        print(f'  ❌ 上传失败: {char} - {e.stderr}')
+
+print(f'\n✅ 完成！共上传 {count} 个字符映射')
+"
+
+          echo "✅ 字符映射上传完成"
+
+      - name: Create summary
+        run: |
+          echo "## 📊 数据同步报告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🖼️ PNG 文件: ${{ steps.check_files.outputs.png_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📝 字符映射: ${{ steps.check_files.outputs.char_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏰ 同步时间: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 访问 API" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Health: https://handwriting-api.zhangyanfu66.workers.dev/api/health" >> $GITHUB_STEP_SUMMARY
+          echo "- Stats: https://handwriting-api.zhangyanfu66.workers.dev/api/stats" >> $GITHUB_STEP_SUMMARY
+          echo "- Search: https://handwriting-api.zhangyanfu66.workers.dev/api/search?q=水" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify completion
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "✅ 数据同步完成"
+          echo "=========================================="
+          echo "PNG 文件: ${{ steps.check_files.outputs.png_count }}"
+          echo "字符映射: ${{ steps.check_files.outputs.char_count }}"
+          echo "=========================================="
